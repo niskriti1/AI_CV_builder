@@ -133,29 +133,26 @@ if st.session_state.show_input:
     )
 
     # Show selected template preview
-    st.subheader("👀 Template Preview")
-    st.markdown(
-        TEMPLATE_PREVIEWS[st.session_state.selected_template], unsafe_allow_html=True
-    )
+    with st.expander("Preview Template", expanded=False):
+        st.markdown(
+            TEMPLATE_PREVIEWS[st.session_state.selected_template],
+            unsafe_allow_html=True,
+        )
 
     st.markdown("---")
 
     # Step 2: Input Information
     st.header("📋 Step 2: Enter Your Information")
 
-    col_input1, col_input2 = st.columns([2, 1])
+    user_input = st.text_area(
+        "Enter your resume details:",
+        height=400,
+        help="Include all relevant information for your resume such as name, contact info, education, skills, work experience, projects, and a brief summary.",
+    )
 
-    with col_input1:
-        user_input = st.text_area(
-            "Enter your resume details:",
-            height=400,
-            help="Include all relevant information for your resume such as name, contact info, education, skills, work experience, projects, and a brief summary.",
-        )
-
-    with col_input2:
-        st.markdown("### 💡 Tips for best results:")
-        st.info(
-            """
+    st.sidebar.markdown("### 💡 Tips for best results:")
+    st.sidebar.info(
+        """
         **📝 Include:**
         - Full name and contact info
         - Education details
@@ -170,7 +167,7 @@ if st.session_state.show_input:
         - Mention GitHub links for projects
         - Keep descriptions concise but detailed
         """
-        )
+    )
 
     # Generate Button
     st.markdown("---")
