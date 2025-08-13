@@ -1,0 +1,6 @@
+streamlit
+agno
+mistralai
+pypandoc
+pdfitdown
+python-dotenv
