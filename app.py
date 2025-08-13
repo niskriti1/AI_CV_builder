@@ -272,6 +272,7 @@ if st.session_state.show_input:
             use_container_width=True,
             key="generate_btn",
         ):
+
             if not user_input.strip():
                 st.warning("⚠️ Please enter your resume information first.")
             elif not is_resume_content(user_input):
