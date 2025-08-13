@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 import streamlit as st
 from cvbuilder import build_resume, markdown_to_docx, markdown_to_pdf, TEMPLATE_PREVIEWS
+import re
 
 # Load environment variables
 load_dotenv()
@@ -73,6 +74,23 @@ st.markdown(
     border-radius: 10px;
     margin-top: 20px;
 }
+
+.info-request {
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 5px;
+}
+
+.warning-message {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 5px;
+    color: #856404;
+}
 </style>
 """,
     unsafe_allow_html=True,
@@ -90,6 +108,80 @@ if "selected_template" not in st.session_state:
     st.session_state.selected_template = "modern"
 if "show_input" not in st.session_state:
     st.session_state.show_input = True
+
+
+def is_resume_content(text):
+    """Check if the input text contains resume-related information"""
+    if not text or len(text.strip()) < 20:
+        return False
+
+    text_lower = text.lower()
+
+    # Casual greetings and non-resume content
+    casual_patterns = [
+        r"\b(hi|hello|hey|greetings)\b",
+        r"\bhow are you\b",
+        r"\bwhat.*up\b",
+        r"\bgood (morning|afternoon|evening)\b",
+        r"\bnice to meet\b",
+        r"\bhow.*day\b",
+        r"\bthank you\b",
+        r"\bthanks\b",
+        r"^\s*(hi|hello|hey)",
+        r"^\s*good (morning|afternoon|evening)",
+    ]
+
+    # Check for casual patterns
+    for pattern in casual_patterns:
+        if re.search(pattern, text_lower):
+            return False
+
+    # Resume-related keywords
+    resume_keywords = [
+        "experience",
+        "education",
+        "skills",
+        "projects",
+        "work",
+        "job",
+        "degree",
+        "university",
+        "college",
+        "email",
+        "phone",
+        "linkedin",
+        "github",
+        "programming",
+        "developer",
+        "engineer",
+        "manager",
+        "intern",
+        "graduate",
+        "bachelor",
+        "master",
+        "phd",
+        "certification",
+        "company",
+        "internship",
+        "employment",
+        "career",
+        "professional",
+        "resume",
+        "cv",
+        "portfolio",
+        "qualification",
+        "achievement",
+    ]
+
+    # Count resume keywords
+    keyword_count = sum(1 for keyword in resume_keywords if keyword in text_lower)
+
+    # Check if it has structure (multiple lines or sections)
+    lines = [line.strip() for line in text.split("\n") if line.strip()]
+    has_structure = len(lines) > 3
+
+    # Must have at least 2 resume keywords or good structure
+    return keyword_count >= 2 or has_structure
 
 
 # Step 1: Template Selection
@@ -148,6 +240,7 @@ if st.session_state.show_input:
         "Enter your resume details:",
         height=400,
         help="Include all relevant information for your resume such as name, contact info, education, skills, work experience, projects, and a brief summary.",
+        placeholder="Start typing your information here...",
     )
 
     st.sidebar.markdown("### 💡 Tips for best results:")
@@ -181,19 +274,49 @@ if st.session_state.show_input:
         ):
             if not user_input.strip():
                 st.warning("⚠️ Please enter your resume information first.")
+            elif not is_resume_content(user_input):
+                # Show the information request message below the button
+                st.markdown("---")
+                st.markdown(
+                    """
+                    <div class="warning-message">
+                        <h4>📝 Could you please provide your personal information, work experience, skills, projects, and education details so I can create your resume?</h4>
+                        <p><strong>For example:</strong></p>
+                        <ul>
+                            <li><strong>Full Name:</strong> Your complete name</li>
+                            <li><strong>Contact Information:</strong> Email, Phone, LinkedIn profile, GitHub profile</li>
+                            <li><strong>Professional Summary:</strong> Brief overview of your career (optional)</li>
+                            <li><strong>Skills:</strong> Programming Languages, Frameworks, Tools, Other Skills</li>
+                            <li><strong>Work Experience:</strong> Job Title, Company, Duration, Key Responsibilities/Achievements</li>
+                            <li><strong>Projects:</strong> Project Name, Description, Technologies Used, GitHub link (if available)</li>
+                            <li><strong>Education:</strong> Degree, University, Graduation Year</li>
+                        </ul>
+                        <p><em>💡 Please provide actual resume information rather than greetings or casual conversation!</em></p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
             else:
                 with st.spinner(
                     f"🔄 Creating your {st.session_state.selected_template} resume..."
                 ):
                     try:
+                        # Generate resume - the AI will now only return resume content
                         st.session_state.generated_resume = build_resume(
                             api_key=api_key,
                             input_text=user_input,
                             template=st.session_state.selected_template,
                         )
-                        st.session_state.show_input = False
-                        st.success("✅ Resume generated successfully!")
-                        st.rerun()
+
+                        # Verify the generated content is actually a resume
+                        if len(st.session_state.generated_resume.strip()) < 100:
+                            st.error(
+                                "❌ Generated content seems too short. Please provide more detailed information."
+                            )
+                        else:
+                            st.session_state.show_input = False
+                            st.success("✅ Resume generated successfully!")
+                            st.rerun()
                     except Exception as e:
                         st.error(f"❌ Error generating resume: {str(e)}")
 
