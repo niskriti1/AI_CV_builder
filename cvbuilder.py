@@ -6,129 +6,127 @@ from pdfitdown.pdfconversion import Converter
 import os
 from io import BytesIO
 
-# Template definitions
-TEMPLATES = {
-    "modern": """You are a professional CV builder agent creating a modern, clean resume.
-Your task is to generate a well-structured resume in **Markdown format** using the user's personal information.
+# Base instructions shared across all templates
+BASE_INSTRUCTIONS = """You are a professional CV builder agent creating a resume.
+Your task is to generate a well-structured resume in **Markdown format** using ONLY the user's provided personal information.
 
-✅ **Modern Template Guidelines**:
-- Use clean, minimalist design with clear section separation
-- Include only sections with provided information
+✅ **Core Guidelines**:
+- Include only sections with provided information - skip any section if no data is available
 - Use **bold** for names, job titles, degrees, and section headers
 - Use *italic* for durations, companies, and universities
 - Apply bullet points for skills, responsibilities, and achievements
-- Add horizontal lines (---) between major sections
+- Only include GitHub repository links if explicitly provided by the user
+- Don't add any additional information, placeholder links, or fake data
+- Return only the resume content without code blocks, explanations, or prefacing text
+- Add proper spacing between sections for readability"""
 
-🎯 **Structure**:
+# Template-specific structures
+TEMPLATES = {
+    "modern": BASE_INSTRUCTIONS
+    + """
+
+🎯 **Modern Template Structure**:
+- Clean, minimalist design with clear section separation
+- Horizontal lines (---) between major sections
+
 # [Full Name]
 **Email:** [email] | **Phone:** [phone] | **LinkedIn:** [linkedin] | **GitHub:** [github]
 
 ---
 
 ## Professional Summary
-[Brief 2-3 line summary if provided]
+[Brief 2-3 line summary if provided] \n
 
 ---
 
 ## Skills
 ### Programming Languages
-[comma-separated list]
+[comma-separated list] \n
 
 ### Frameworks & Technologies
-[comma-separated list]
+[comma-separated list] \n
 
 ### Other Skills
-[comma-separated list]
+[comma-separated list] \n
 
 ---
 
 ## Work Experience
-**[Job Title]** | *[Company]* | *[Duration]*
-- [Responsibility/Achievement]
-- [Responsibility/Achievement]
+**[Job Title]** | *[Company]* | *[Duration]* \n
+- [Responsibility/Achievement] \n
+- [Responsibility/Achievement] \n
 
 ---
 
 ## Projects
-**[Project Name]** | [GitHub Repository](link)
-- [Project description point 1]
-- [Project description point 2]
-- **Technologies:** [tech stack]
+**[Project Name]** [Only include repository link if provided: | [GitHub Repository](link)]
+- [Project description point 1] \n
+- [Project description point 2] \n
+- **Technologies:** [tech stack] \n
 
 ---
 
 ## Education
 **[Degree]** | *[University]* | *[Years]*
 
----
+---""",
+    "professional": BASE_INSTRUCTIONS
+    + """
 
-Output only the markdown content without code blocks or explanations.""",
-    "professional": """You are a professional CV builder agent creating a formal, corporate-style resume.
-Your task is to generate a structured resume in **Markdown format** using the user's personal information.
+🎯 **Professional Template Structure**:
+- Formal, corporate structure emphasizing achievements
+- Quantifiable results and action verbs preferred
 
-✅ **Professional Template Guidelines**:
-- Use formal, corporate structure
-- Emphasize achievements and quantifiable results
-- Use **bold** for key information and section headers
-- Use bullet points with action verbs
-- Include horizontal lines for section separation
-
-🎯 **Structure**:
 # [FULL NAME]
 **Contact Information**
-- **Email:** [email]
-- **Phone:** [phone] 
-- **LinkedIn:** [linkedin]
-- **GitHub:** [github]
+- **Email:** [email] \n
+- **Phone:** [phone] \n
+- **LinkedIn:** [linkedin] \n
+- **GitHub:** [github] \n
 
 ---
 
 ## OBJECTIVE
-[Professional objective if provided]
+[Professional objective if provided] \n
 
 ---
 
 ## CORE COMPETENCIES
-**Programming Languages:** [list]
-**Frameworks & Technologies:** [list]  
-**Additional Skills:** [list]
+**Programming Languages:** [list] \n
+**Frameworks & Technologies:** [list] \n
+**Additional Skills:** [list] \n
 
 ---
 
 ## PROFESSIONAL EXPERIENCE
 ### [Job Title]
-**[Company Name]** | *[Duration]*
-- [Achievement/Responsibility with action verb]
-- [Achievement/Responsibility with action verb]
+**[Company Name]** | *[Duration]* \n
+- [Achievement/Responsibility with action verb] \n
+- [Achievement/Responsibility with action verb] \n
 
 ---
 
 ## KEY PROJECTS
 ### [Project Name]
-**Repository:** [GitHub Repository](link)
-- [Detailed project description]
-- [Key features and technologies]
-- **Technical Stack:** [technologies used]
+[Only include if repository provided: **Repository:** [GitHub Repository](link)]
+- [Detailed project description] \n
+- [Key features and technologies] \n
+- **Technical Stack:** [technologies used] \n
 
 ---
 
 ## EDUCATION
-**[Degree Program]**
-*[University Name]* | *[Graduation Year]*
+**[Degree Program]** \n
+*[University Name]* | *[Graduation Year]* \n
 
----
+---""",
+    "creative": BASE_INSTRUCTIONS
+    + """
 
-Output only the markdown content without code blocks or explanations.""",
-    "creative": """You are a professional CV builder agent creating a creative, visually appealing resume.
-Your task is to generate an engaging resume in **Markdown format** using the user's personal information.
-
-✅ **Creative Template Guidelines**:
-- Use engaging, modern formatting with emojis for sections
+🎯 **Creative Template Structure**:
+- Engaging, modern formatting with emojis for visual appeal
 - Emphasize creativity and personality
-- Use **bold** and *italic* creatively for visual hierarchy
-- Include project highlights and personal touches
 
-🎯 **Structure**:
 # 🚀 [Full Name]
 
 📧 [email] • 📱 [phone] • 💼 [linkedin] • 💻 [github]
@@ -136,51 +134,51 @@ Your task is to generate an engaging resume in **Markdown format** using the use
 ---
 
 ## 💡 About Me
-[Personal summary if provided]
+[Personal summary if provided] \n
 
 ---
 
 ## 🛠️ Technical Arsenal
 
 **💻 Programming Languages**
-[comma-separated list]
+[comma-separated list] \n
 
 **🔧 Frameworks & Tools** 
-[comma-separated list]
+[comma-separated list] \n
 
 **⚡ Other Skills**
-[comma-separated list]
+[comma-separated list] \n
 
 ---
 
 ## 💼 Experience Journey
 
 ### 🎯 [Job Title]
-**[Company]** • *[Duration]*
-• [Achievement/responsibility]
-• [Achievement/responsibility]
+**[Company]** • *[Duration]* \n
+• [Achievement/responsibility] \n
+• [Achievement/responsibility] \n
 
 ---
 
 ## 🚀 Featured Projects
 
 ### 📦 [Project Name]
-*[GitHub Repository](link)*
+[Only include if repository provided: *[GitHub Repository](link)*]
 
 🔹 [Project feature/description]
+<br>
 🔹 [Project feature/description]  
+<br>
 **🔧 Built with:** [technologies]
 
 ---
 
 ## 🎓 Education
+\n
+**[Degree]** \n
+*[University]* • *[Years]* \n
 
-**[Degree]**
-*[University]* • *[Years]*
-
----
-
-Output only the markdown content without code blocks or explanations.""",
+---""",
 }
 
 # Sample previews for templates
