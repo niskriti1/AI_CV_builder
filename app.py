@@ -1,13 +1,12 @@
 # main.py
 import os
-from dotenv import load_dotenv
 import streamlit as st
 from cvbuilder import build_resume, markdown_to_docx, markdown_to_pdf, TEMPLATE_PREVIEWS
 import re
 
 # Load environment variables
-load_dotenv()
-api_key = os.getenv("MISTRAL_API_KEY")
+
+api_key = st.secrets["AGENT_API_KEY"]
 
 st.set_page_config(page_title="AI CV Builder", page_icon="📄", layout="wide")
 
